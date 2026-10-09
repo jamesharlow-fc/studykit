@@ -2,19 +2,30 @@
 
 `graduate` · `mid` · `senior` · `lead` · `staff`
 
-One setting, three effects.
+Your level is one setting. It changes three things.
 
 ## What your level changes
 
-**1. What mix of question types you get.** Your level sets the target mix in [question-types.md](question-types.md#levels): a graduate draw leans on recall and discrimination, a senior draw on judgment. It is a starting point, not a rule. Every measurement you record moves it, so a type you answer well loses share and a weak one gains it, and after enough sessions the mix reflects you rather than your level. `PRIOR_STRENGTH` in `studykit/select.py` sets how much evidence that takes.
+**1. The mix of question types.** Your level sets a target mix, listed in [question-types.md](question-types.md#levels). Graduates get more recall and discrimination. Seniors get more judgment.
 
-A question's own `levels` is a preference inside that mix, not a gate. Questions written for your level come first; once you have seen them, the rest of an in-scope topic is reachable. Nothing is withheld because it was tagged for someone else, so a thin pool at your level degrades to harder or easier questions rather than to no questions.
+The mix is only a starting point. Every score you record moves it: a type you answer well comes up less, and a weak one comes up more. After enough sessions the mix fits you rather than your level. `PRIOR_STRENGTH` in `studykit/select.py` sets how many scores that takes.
 
-**2. Which topics and problems are in scope.** A topic declares its levels too, and this one *is* a hard filter. `consistency-models` starts at senior; `multi-region-checkout` starts at lead. Out-of-scope topics do not appear in your queue, your coverage percentage or your gaps. Scope is about relevance rather than difficulty: a graduate is not asked about multi-region failover at all, whereas a graduate-tagged question is only ever deprioritised.
+Each question also lists the levels it was written for. Within a topic, questions for your level come first. Once you have seen those, the other questions in the topic can come up too. No question is hidden because it was written for another level, so if there are few questions at your level you get harder or easier ones, not none.
 
-**3. The bar you are judged against.** Each pack declares a **calibration brief** per level: the bar an answer must clear, what to assume the person already knows, what to push on, and what not to demand. `./study plan` returns it.
+**2. Which topics and problems you see.** Topics and problems also list their levels. This is a hard filter. `consistency-models` starts at senior. `multi-region-checkout` starts at lead. A topic outside your level does not appear in your queue, your coverage percentage or your gaps.
 
-The 1-5 scale does not change. A 4 always means "correct with the tradeoff named". What changes is what counts as the tradeoff, and how much is expected unprompted.
+This filter is about relevance, not difficulty. A graduate is never asked about multi-region failover. A question written for graduates only comes up less often for a senior.
+
+**3. The bar you are judged against.** Each pack has a **calibration brief** for each level. It says:
+
+- the bar an answer must clear
+- what to assume you already know
+- what to push on
+- what not to demand
+
+`./study plan` returns it.
+
+The 1-5 scale is the same at every level. A 4 always means "correct, with the tradeoff named". What changes is what counts as the tradeoff, and how much you are expected to say without being asked.
 
 ## Seeing the briefs
 
@@ -22,7 +33,7 @@ The 1-5 scale does not change. A 4 always means "correct with the tradeoff named
 ./study levels
 ```
 
-Prints every level's bar for each enabled pack, with the `assume`, `push_on` and `avoid` that go with it. `avoid` is what stops a graduate being marked down for not producing a cost model.
+This prints the bar at every level for each enabled pack, with its `assume`, `push_on` and `avoid`. `avoid` is what stops a graduate losing marks for not giving a cost model.
 
 ## Changing it
 
@@ -30,26 +41,26 @@ Prints every level's bar for each enabled pack, with the `assume`, `push_on` and
 ./study config set level lead
 ```
 
-State and metrics rebuild on the spot. The ledger is untouched, and rows record the level they were taken at, so history stays interpretable after a change.
+State and metrics rebuild straight away. The ledger does not change. Each row records the level it was scored at, so your history still makes sense after you change level.
 
-Moving up:
+If you move up:
 
-- **Coverage drops**, because topics that were out of scope are now in it.
-- **Existing strengths do not change**, because they are measurements, not judgements. A facet measured at 4 as a senior still reads 4 as a lead, and the next measurement at the new bar is what moves it.
+- **Your coverage drops**, because topics that were out of scope are now in it.
+- **Your existing scores stay the same.** They are measurements. A sub-topic scored 4 as a senior still reads 4 as a lead. Your next score, against the new bar, is what moves it.
 
-Moving down does the reverse. Out-of-scope measurements stay in the ledger.
+Moving down does the opposite. Scores for topics now out of scope stay in the ledger.
 
 ## Choosing one
 
-Pick the level you are being **assessed** at, not the one you are comfortable at. Preparing for an interview, use the level of the role; maintaining knowledge for your current job, use your current level.
+Pick the level you are being **assessed** at, not the one you are comfortable at. If you are preparing for an interview, use the level of the role. If you are keeping your knowledge up for your current job, use your current level.
 
-One level above yours is harsh and works. One level below is comfortable and will not move anything.
+Studying one level above your own is hard but useful. Studying one level below teaches you little.
 
 ## Authoring for levels
 
 The TOML is in [authoring-packs.md](authoring-packs.md#packtoml).
 
-- **Tag a question for the levels it was written for, not the levels it is survivable at.** "What does a load balancer do" is a graduate question that a staff engineer can answer, so it is a graduate question. Tagging it up to `staff` no longer withholds it from anyone, it just competes for a staff slot it does not deserve.
-- **A topic's lowest level is the level at which its *simplest* facet is fair.** This is the tag that decides whether the topic exists for someone, so it is the consequential one.
-- **`avoid` matters more than `bar`.** Stating what not to demand is what makes the lower levels usable.
-- **Author for coverage per level, not for share per pack.** A pack can sit on target overall while its graduate pool is nearly all recall, and a type piled onto one facet counts for nothing a draw can use. `./study doctor --verbose` reports which types each level is too thinly spread to supply, the depth per facet, and any topic with no questions at one of its declared levels.
+- **Tag a question with the levels it was written for, not every level that could answer it.** "What does a load balancer do" is a graduate question. A staff engineer can answer it, but it is still a graduate question. Tagging it up to `staff` does not hide it from anyone. It just takes a staff slot it should not have.
+- **A topic's lowest level is the lowest level at which its simplest sub-topic is fair.** This tag decides whether someone sees the topic at all, so it matters most.
+- **`avoid` matters more than `bar`.** Saying what not to demand is what makes the lower levels usable.
+- **Write enough questions for each level, not just enough for the pack.** A pack can hit its target mix overall while its graduate questions are nearly all recall. And many questions of one type on a single sub-topic do not help a session that needs that type across several. `./study doctor --verbose` reports which types each level has too few of across its sub-topics, how many questions each sub-topic has, and any topic with no questions at one of its levels.

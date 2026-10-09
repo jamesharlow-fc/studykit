@@ -1,122 +1,129 @@
 # Scoring and scheduling
 
-## Three constructs, never merged
+## Three separate things
 
-| Field | Is | Drives |
+These are recorded separately and never combined.
+
+| Field | What it is | What it affects |
 |---|---|---|
-| `predicted` | the user's own pre-answer rating | calibration only, **never** scheduling |
-| `measured` | cold-recall score, taken before any teaching | scheduling and metrics |
-| `state.json` | derived from `measured` | what comes up next |
+| `predicted` | how well the user expects to do, in their own words, before answering | the calibration metric only, **never** scheduling |
+| `measured` | the score for the first answer, before any teaching | scheduling and metrics |
+| `state.json` | built from `measured` | what comes up next |
 
-## Score scale
+## The score scale
 
-Cold recall, 1-5, judged **before any teaching**:
+Scores run from 1 to 5. The score is given **before any teaching**.
 
 | | Meaning |
 |---|---|
 | 1 | No usable answer |
 | 2 | A fragment, **or a confident wrong answer** |
-| 3 | Core idea, missing the why or the cost |
-| 4 | Correct with the tradeoff named |
-| 5 | Correct, quantified, and volunteers a failure mode or boundary |
+| 3 | The core idea, but missing the why or the cost |
+| 4 | Correct, and names the tradeoff |
+| 5 | Correct, with numbers, and raises a failure mode or limit unprompted |
 
-A confident wrong answer scores **2, not 3**. Conflation is worse than a blank, because a blank knows it is a blank and will not self-correct into a design decision.
+A confident wrong answer scores **2, not 3**. Mixing two ideas up is worse than not knowing, because someone who is sure of a wrong answer will build on it.
 
-The scale is fixed; the **bar** moves with level. See [levels.md](levels.md).
+The scale is the same at every level. The **bar** for each score changes with level. See [levels.md](levels.md).
 
-## Item identity
+## What gets scored
 
-Measurement, storage and scheduling all happen at `pack / topic / subtopic`. Topic-level strength is derived, never stored.
+Everything is scored, stored and scheduled per sub-topic: `pack / topic / subtopic`. A topic's strength is worked out from its sub-topics and never stored.
 
-Problems are a separate item type: `pack / problem:<slug>`, always with `subtopic: overall`. They carry a performance score and never contribute strength to topics.
+Problems are scored separately, as `pack / problem:<slug>` with `subtopic: overall`. A problem score never adds to a topic's strength.
+
+A topic can also be scored as a whole, with `subtopic: overall`. Once any of its sub-topics has a score, the `overall` row drops out of the queue.
 
 ## Strength
 
-`strength` is the **most recent** measured score for that sub-topic. Not an average: an old 5 does not offset a fresh 2. History lives in the ledger and drives the trend chart, not current state.
+`strength` is the **latest** score for a sub-topic. It is not an average, so an old 5 does not cancel out a fresh 2. Older scores stay in the ledger and feed the trend chart, but do not affect current state.
 
-Where several measurements land on one date (several quiz questions on one facet), they collapse to the **mean of that date, rounded half up, counted as one rep**. Eight questions about caching is one piece of evidence about caching, not eight.
+If one sub-topic gets several scores on the same day (for example, several quiz questions on it), they count as **one rep**, scored as **their mean, rounded half up**. Eight questions about caching on one day is one piece of evidence, not eight.
 
-A row records the full timestamp it was measured at. Scheduling reads the calendar day off it, so the collapse holds however far apart in the day the questions were asked.
+Each row stores the full time it was recorded. Scheduling only uses the date, so all questions on the same day count as one rep, however far apart they were asked.
 
-## Evidence quality
+## How much evidence there is
 
-Every item tracks `reps`, the count of direct measurement **dates**. This caps how far ahead it can be scheduled:
+Every sub-topic tracks `reps`: the number of **days** it has been scored on. This limits how far ahead it can be scheduled:
 
-| reps | Maximum interval |
+| reps | Longest interval |
 |---:|---:|
 | 1 | 3 days |
 | 2 | 10 days |
-| 3+ | uncapped, to a 120-day ceiling |
+| 3+ | no limit beyond the 120-day ceiling |
 
-One answer is evidence of not-failing-once, not of mastery. Without the cap, a single lucky 5 schedules itself a week out.
+One good answer is not much evidence. Without this limit, one lucky 5 on the first day would not come back for 6 days.
 
 ## Interval
 
-SM-2 style, on the **measured** score, from the previous interval:
+The interval is the number of days until a sub-topic is due again. It uses the **measured** score and the previous interval, in the style of SM-2:
 
-- **1-2**: reset to 1 day
-- **3**: previous × 1.6, minimum 2 days
+- **1-2**: back to 1 day
+- **3**: previous × 1.6, at least 2 days
 - **4**: previous × 2.2
 - **5**: previous × 3.0
-- First measurement starts from a base interval of 2 days
-- Then the `reps` cap above, then the 120-day ceiling
+- Multiplied intervals are rounded half up to whole days
+- The first score counts the previous interval as 2 days
+- The `reps` limit above applies next, then the 120-day ceiling
 - `due = last_measured + interval`
 
-Problems are exempt from the `reps` cap, because a problem is a broad integration measure rather than a single data point. They still respect the ceiling.
+Problems skip the `reps` limit, because one problem covers a lot of ground. The 120-day ceiling still applies.
 
-**Topic due date** is the earliest due date among its sub-topics.
+**A topic is due** on the earliest due date of its sub-topics.
 
-The multipliers are conventional, not derived. See the *Contested* section of [research.md](research.md).
+The multipliers are common practice, not taken from research. See the *Contested* section of [research.md](research.md).
 
 ## Calibration
 
-`predicted` is captured per question, before the answer, on the same 1-5 scale, and is absent when the user does not give one. It feeds **mean signed error, `predicted - measured`**, tracked over time. Positive means overconfidence.
+`predicted` is asked per question, before the answer, on the same 1-5 scale. If the user does not give one, the field is left out. It feeds one metric, **mean signed error: `predicted - measured`**, tracked over time. A positive number means the user is overconfident.
 
-## Pretesting
+## Test first, then teach
 
-Every session type tests **before** it teaches. Attempting and failing before instruction beats errorless study for retention, and the failed attempt is the honest number anyway. Warrant: [research.md](research.md), retrieval before instruction.
+Every session type tests **before** it teaches. Trying and failing before being taught helps people remember more than studying the answer does. It also means the score shows what you knew before the session. Source: [research.md](research.md), *Retrieval before instruction*.
 
-## The follow-up ladder
+## What follows an answer
 
-| Cold `measured` | What follows | Why |
+| First score | What follows | Why |
 |---:|---|---|
-| 4-5 | One line: a confirmation, or the boundary they did not volunteer. | Guidance at this level is redundant and costs working memory: expertise reversal. |
-| 3 | The specific gap, named. | The schema is there; only the missing piece needs supplying. |
-| 1-2 | A **worked example**, then a **variant** re-test later in the same session, logged as `post`. | A 1-2 means there was nothing to generate from. Correction alone produces fluency without encoding. |
+| 4-5 | One line: a confirmation, or the limit they did not mention. | More guidance at this level gets in the way (the expertise reversal effect). |
+| 3 | Name the specific gap. | The understanding is there. Only the missing piece is needed. |
+| 1-2 | A **worked example**, then a re-test on a **different version** of the question later in the same session, recorded as `post`. | A 1-2 means there was nothing to build on. Reading a correction feels like learning but often is not. |
 
-Warrant: [research.md](research.md), *prior knowledge gates unguided struggle* and *feedback needs a second retrieval*.
+Source: [research.md](research.md), *Some prior knowledge is needed first* and *Feedback needs a second attempt*.
 
 ## What `post` means
 
-`post` is the variant re-test score, after teaching. It is informational and **never schedules**: `measured` stays the cold number and drives the interval alone.
+`post` is the re-test score after teaching. It **never affects scheduling**. `measured` stays as the first score and is the only one that sets the interval.
 
-It diagnoses the **teaching**, not the learner. A 2 that stays 2 after a worked example means the explanation missed, or the facet needs a dedicated `learn` session rather than a quiz slot. A 2 that reaches 4 means the gap was exposure, and the next rep will tell whether it stuck.
+`post` tells you whether the **teaching** worked, not how much the learner knows. A 2 that stays a 2 after a worked example means the explanation missed, or the sub-topic needs a full `learn` session rather than a quiz question. A 2 that becomes a 4 means the user had not seen it before. The next rep shows whether it stuck. If a sub-topic is at 2 or below, and has either been scored on only one day or had its last `post` at 2 or below, `./study plan` offers a `learn` block for it.
 
-## What each session may write
+## What each session can record
 
-| Session | May write |
+| Session | Can record |
 |---|---|
-| `quiz` | sub-topic measurements, one per question, with `qtype` |
-| `practice` / `review` | a `problem:` score, plus sub-topic rows **only** for facets directly exercised, direction following the evidence |
-| `learn` | a pre-teaching measurement, and optionally `post` after teaching |
-| `study` | whatever its composed blocks write |
+| `quiz` | one sub-topic score per question, with `qtype` |
+| `practice` / `review` | a `problem:` score, plus sub-topic scores **only** for sub-topics the problem directly tested, up or down |
+| `learn` | a score before teaching, and optionally `post` after it |
+| `study` | whatever its blocks record |
 
-**Problem scores never propagate to topics.** A problem score measures performance on that problem. It may emit sub-topic measurements for facets it genuinely exercised, including negative ones, and it never lifts a topic's strength on its own.
+**A problem score never raises a topic.** It measures how you did on that problem. It can add sub-topic scores for sub-topics the problem really tested, including low ones. It never raises a topic's strength on its own.
 
-**Nothing is inferred from adjacency.** A session scores the facets it directly exercised, in the direction the evidence points. A topic does not move because a related one went well, and what was not tested gets no number.
+**Nothing is inferred from related topics.** A session only scores what it directly tested, in the direction the answer showed. A topic does not go up because a related one went well. Anything not tested gets no score.
 
-## Technique selection by strength
+## Which block a sub-topic gets
 
-Warrant: [research.md](research.md), worked examples reverse with expertise.
+`./study plan` picks blocks by strength. See [techniques.md](techniques.md) for the full list. Source: [research.md](research.md), *Worked examples stop helping as you improve*.
 
-| Strength | Default technique |
+| Strength | Block |
 |---:|---|
-| 1-2 | faded worked example, contrasting cases |
-| 3 | discrimination and judgment questions |
-| 4-5 | judgment, numeric, diagnostic inversion, full problems |
+| 1-2 | a `learn` block if it has been scored on only one day or its last `post` was 1-2, otherwise a faded worked example |
+| 2 | contrasting cases, for a confident wrong answer |
+| 3 | diagnostic inversion: symptoms given, cause asked for |
 
-## Question fairness
+Full problems do not depend on strength. `./study plan` adds one when there is time. `./study status` suggests a problem session once four or more sub-topics are at 4 or above.
 
-A question may only require material the pack actually carries: what is on the card, or what follows from it by reasoning the card supports. Asking for a derivation the material never introduces measures nothing and scores an unfair 1.
+## Fair questions
 
-If a question is worth asking and the card lacks its grounding, **the card is what needs fixing**.
+A question may only ask for what the pack teaches: what is on the card, or what follows from it by reasoning the card supports. If a question needs material the card does not cover, its score means nothing.
+
+If a question is worth asking and the card does not cover it, **fix the card**.

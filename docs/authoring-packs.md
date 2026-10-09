@@ -1,6 +1,6 @@
 # Authoring a pack
 
-A pack is content. It declares what there is to learn and says nothing about scheduling, scoring or session structure, so it can be shared without carrying anyone's history.
+A pack is content only. It says what there is to learn. It says nothing about scheduling, scoring or how a session runs, so you can share it without sharing anyone's history.
 
 ## Layout
 
@@ -9,15 +9,20 @@ A pack is content. It declares what there is to learn and says nothing about sch
   pack.toml                    manifest: levels, areas, topics, problems, calibration
   cards/<topic>.md             one knowledge card per topic
   questions/<topic>.toml       one question bank per topic
-  problems/<slug>/prompt.md    candidate-facing ask
+  problems/<slug>/prompt.md    what the candidate sees
   problems/<slug>/notes.md     interviewer notes, never shown before an attempt
 ```
 
-The filename conventions are load-bearing: `cards/<topic id>.md` and `questions/<topic id>.toml` are found by the topic's id, not by anything in the manifest.
+The file names matter. studykit finds `cards/<topic id>.md` and `questions/<topic id>.toml` by the topic's id. Nothing in the manifest points to them.
 
-Two directories are searched: `packs/` in the checkout, for the packs that ship with it, and `~/.studykit/packs/` for packs you install. Drop a directory into either and it is available. Installing to the second keeps `git status` clean and syncs the pack with your data to your other machines. Two packs sharing a name is an error naming both directories.
+studykit looks for packs in two places:
 
-`./study packs enable <name>` and `./study packs disable <name>` choose what is in rotation, or `./study config set packs a,b` replaces the list outright. `./study packs` says where each one was loaded from.
+- `packs/` in the checkout, for the packs that ship with it.
+- `~/.studykit/packs/`, for packs you install.
+
+Put a pack directory in either and it is available. Installing to `~/.studykit/packs/` keeps `git status` clean. The pack also syncs to your other machines with your data. If two packs have the same name, studykit stops with an error naming both directories.
+
+To choose which packs are in rotation, use `./study packs enable <name>` and `./study packs disable <name>`. To replace the whole list, use `./study config set packs a,b`. `./study packs` shows where each pack was loaded from.
 
 ## pack.toml
 
@@ -51,22 +56,24 @@ levels = ["mid", "senior", "lead", "staff"]
 minutes = 45                     # what the composer budgets for it
 ```
 
-A calibration brief per level is optional but strongly recommended: without one the agent falls back on its own judgement, which drifts. `./study doctor --verbose` lists missing ones.
+A topic or problem with no `levels` gets the pack's levels.
+
+Write a calibration brief for every level. It is optional. Without one, the agent uses its own judgement, which is less consistent. `./study doctor --verbose` lists the missing ones.
 
 ## Sub-topics
 
-The atom of measurement, scheduling and reporting.
+Sub-topics are what gets scored, scheduled and reported. Every topic must declare at least one.
 
-- **Four to seven per topic.** Fewer and the topic is too coarse to schedule usefully; more and each one is measured too rarely to mean anything.
-- **Name them by what is known, not by section heading.** `stampede-penetration` is a facet you can be right or wrong about. `overview` is not.
-- **They must be independently assessable.** If you cannot write a question that tests one without testing another, they are one facet.
-- **Adding a sub-topic makes it appear as unmeasured**, so it shows up in everyone's queue immediately. Renaming one is a breaking change: the old name's history is orphaned. Prefer adding to renaming.
+- **Have four to seven per topic.** With fewer, the topic is too broad to schedule well. With more, each one is tested too rarely for its score to mean anything.
+- **Name them after something you can know.** `stampede-penetration` is something you can be right or wrong about. `overview` is not.
+- **Each one must be testable on its own.** If you cannot write a question that tests one without also testing another, they are one sub-topic.
+- **Add rather than rename.** A new sub-topic starts unmeasured, so it appears in everyone's queue straight away. Renaming one breaks it: the history under the old name is orphaned.
 
 ## Cards
 
-Plain markdown, no frontmatter. Start with an H1 and a one-line summary. `./study card` prints the area and level range above it, from the manifest, so a card never states its own.
+A card is plain markdown with no frontmatter. Start with an H1 and a one-line summary. Do not state the card's area or levels. `./study card` prints those above the card, from the manifest.
 
-**Structure the body by sub-topic**, using the sub-topic id as a heading. That is what makes question fairness mechanical: a question is fair if the card carries its grounding, and with facet-shaped headings it is obvious whether it does.
+**Give each sub-topic its own section**, with the sub-topic id as the heading. A question is fair only if the card covers what it asks. With one heading per sub-topic, it is easy to see whether it does.
 
 ```markdown
 # Caching
@@ -89,13 +96,13 @@ Plain markdown, no frontmatter. Start with an H1 and a one-line summary. `./stud
 - [consistent-hashing](consistent-hashing.md)
 ```
 
-What makes a card good here, as opposed to a good article:
+A card is for answering questions from, not for reading through. So:
 
-- **Written for retrieval, not reading.** Tables of contrasts, named failure modes, numbers with orders of magnitude. Prose that flows nicely is harder to be quizzed on.
-- **State the tradeoff, not just the mechanism.** Every technique section should say what it costs and when it is wrong.
-- **Include the numbers.** A card with no numbers cannot support a `numeric` question, and `numeric` is where hand-waving gets caught.
-- **Name the conflations explicitly.** "These two get confused constantly; the axis that separates them is X" is the single highest-value sentence you can write, because it is what `discrimination` questions test.
-- Links are relative markdown paths. No wiki-links, no vault, no plugins.
+- **Prefer tables, named failure modes and numbers to flowing prose.** Prose is harder to be quizzed on.
+- **Give the cost, not just the mechanism.** Every technique should say what it costs and when it is the wrong choice.
+- **Include numbers.** Without them the card cannot support `numeric` questions, which are the best way to catch vague answers.
+- **Name the things people confuse.** Write "These two get confused; what separates them is X". This is what `discrimination` questions test.
+- **Use relative markdown links.** No wiki-links, vaults or plugins.
 
 ## Question banks
 
@@ -112,19 +119,19 @@ a = "They are on different axes entirely. Cache-aside is a READ strategy; write-
 ```
 
 - `qtype` is one of `recall` `discrimination` `judgment` `diagnostic` `numeric`. See [question-types.md](question-types.md).
-- `subtopic` must be declared by the topic. `doctor` catches it if not.
-- `levels` defaults to the pack's levels if omitted. Be deliberate rather than relying on the default: every level named here is a pool the question has to earn its place in, and tagging a recall question up to `staff` inflates that pool's recall share while giving a staff candidate nothing. `doctor` reports the resulting mix per level.
-- Ids are stable forever and never reused, because the ledger references them.
-- Numeric tails, `ca-001`, belong to pack authors. Questions banked during a session get `ca-u<hash>`, derived from the question text, so a session can never mint an id a pack later wants and two machines that bank the same question offline agree on one id.
-- **Exposure history is not stored here.** `shown` and `reps` are derived from the ledger.
+- `subtopic` must be one the topic declares. `doctor` reports it if not.
+- `levels` defaults to the pack's levels. Set it on purpose. Each level you list is a pool the question competes in. Tagging a recall question up to `staff` adds to staff's share of recall without giving a staff candidate anything useful. `doctor` reports the mix per level.
+- Ids are permanent and never reused, because the ledger refers to them. Two questions with the same id are an error.
+- Numeric ids like `ca-001` are for pack authors. Questions banked during a session get `ca-u<hash>`, where the hash comes from the question text. This means a session never takes an id a pack will want later. Two machines that bank the same question offline also get the same id.
+- **Do not store exposure history here.** `shown` and `reps` are worked out from the ledger.
 
-**A stem has to stand on its own**: [question-types.md](question-types.md#stems-are-self-contained). The cheapest way to find one that does not is to answer it deliberately under the other reading and see whether the banked answer still applies.
+**A stem must make sense on its own.** See [question-types.md](question-types.md#stems-are-self-contained). To test one, read it a different way and answer that. If your answer is reasonable but the banked answer would mark it wrong, the stem needs more context.
 
-Write the answer as what a **strong** answer contains, not as a minimal key. The agent scores against it and uses it to name the gap, so "Less, -2, because the floor on overshoot is one lease per node" beats "Less appropriate".
+Write the answer as what a **strong** answer contains, not the minimum to pass. The agent scores against it and uses it to tell the user what they missed. "Less, -2, because the floor on overshoot is one lease per node" is better than "Less appropriate".
 
 ### Figures are derived, not asserted
 
-A question that states a figure carries `derivation`: the arithmetic, one `name = expression` per step.
+If a question states a figure, it needs a `derivation`: the arithmetic, one `name = expression` per step.
 
 ```toml
 [[q]]
@@ -143,33 +150,34 @@ derivation = [
 ]
 ```
 
-`doctor` evaluates it and checks that every magnitude in `q` and `a` falls out of some step; `bank add` refuses a new question that states figures without one. A wrong figure scores the candidate against something that has no correct answer, and the ledger it lands in is append-only.
+`doctor` runs the derivation and checks that every figure in `q` and `a` matches the result of some step. `bank add` refuses a new question that states figures without a derivation. If a figure is wrong, no answer can be correct. The score still goes into the ledger permanently.
 
-- Numbers, the operators `+ - * / // % **`, and `abs round min max log log2 log10 exp sqrt ceil floor`. Nothing else evaluates.
-- Put the **inputs** in as well, not just the results. `rtt_ms = 140` is what lets the 140 ms in the stem be recognised.
-- A figure may round to the precision it is written to, so `about 30x` accepts 29.33. Scientific notation with one significant figure, `1e-19`, claims an order of magnitude and nothing finer.
-- Only magnitudes are checked: a unit, a scale word, a thousands separator, an exponent, `1 in 5`, or a value of 1000 or more. `TLS 1.3` and `the next 3 nodes` are counts and are left alone, so a figure hiding in a bare count is still yours to get right.
-- Units are not converted. If the prose says both `280 ms` and `0.28 s`, derive both.
+- You can use numbers, the operators `+ - * / // % **`, and `abs round min max log log2 log10 exp sqrt ceil floor`. Nothing else runs.
+- Include the **inputs** as steps, not just the results. `rtt_ms = 140` is what lets the check match the 140 ms in the stem.
+- A figure matches if it is the result rounded to the precision it is written at, so `about 30x` matches 29.33. Scientific notation with one significant figure, such as `1e-19`, only claims the order of magnitude.
+- Only figures that look like quantities are checked: a number with a unit, a scale word, a thousands separator or an exponent, a ratio like `1 in 5`, or any value of 1000 or more. Plain counts like `TLS 1.3` and `the next 3 nodes` are skipped, so a figure that looks like a plain count is not checked. You have to get it right yourself.
+- A lowercase `m` after a number is rejected, because it could mean million or minutes. Write `M`, `million` or `minutes`.
+- Units are not converted. If the text says both `280 ms` and `0.28 s`, derive both.
 
-Deriving a figure a second way is the cheapest review there is. `./study bank check --json-text '{"questions": [...]}'` runs the same check and writes nothing, which is what to use **before** a question is asked rather than after.
+`./study bank check --json-text '{"questions": [...]}'` runs the same check without writing anything. Use it **before** a question is asked, not after.
 
 ## Problems
 
-Two files, deliberately.
+A problem is two files, so the notes cannot leak into the prompt.
 
-`prompt.md` is everything the candidate sees: a one-line ask, deliberately under-specified so they have to ask clarifying questions, and nothing else.
+`prompt.md` is all the candidate sees: a one-line ask and nothing else. Leave it under-specified on purpose, so they have to ask questions.
 
-`notes.md` is never shown before an attempt. `./study problem <slug>` cannot return it; you need `--notes`. Include:
+`notes.md` is never shown before an attempt. `./study problem <slug>` does not return it; you need `--notes`. Include:
 
-- **Hidden requirements**, functional and non-functional, that a good candidate extracts by asking.
-- **Back-of-envelope numbers** they should reach, with the arithmetic.
-- **Two or three deep-dive areas**, each with what to push on.
-- **Strong-answer signals**: what separates a good answer from a correct one.
+- **Hidden requirements**, functional and non-functional, that a good candidate finds by asking.
+- **Rough numbers** they should reach, with the arithmetic.
+- **Two or three areas to go deep on**, each with what to push on.
+- **Signs of a strong answer**: what makes an answer good rather than just correct.
 - **Common traps.**
-- **Level calibration**, if the problem spans several levels and the bar differs meaningfully.
+- **Level calibration**, if the problem covers several levels and the bar is clearly different between them.
 - **Follow-up questions.**
 
-If a candidate can start designing without asking anything, the prompt has given away too much.
+If a candidate can start designing without asking anything, the prompt says too much.
 
 ## Validating
 
@@ -177,13 +185,33 @@ If a candidate can start designing without asking anything, the prompt has given
 ./study doctor --verbose
 ```
 
-Checks: cards exist, questions name declared sub-topics, ids are unique across the pack, problems have both files, areas are declared, every `derivation` evaluates and accounts for the figures quoted around it, and every ledger row still validates against the taxonomy. `--verbose` adds notes: topics with no card, missing calibration briefs, questions stating figures with no derivation, derivation steps nothing quotes, any topic with no questions at one of its declared levels, which is the usual authoring gap, and any level whose facet coverage or depth cannot supply the mix in [question-types.md](question-types.md#levels).
+`doctor` reports these as problems:
 
-Then use it:
+- a topic with no sub-topics
+- a topic whose area is not in `pack.areas`
+- a question naming a sub-topic its topic does not declare
+- a problem missing `prompt.md` or `notes.md`
+- a `derivation` that fails to run, or a figure it does not account for
+- a figure written with a lowercase `m`
+- a ledger row that no longer matches the pack's topics and sub-topics
+
+Duplicate question ids and two packs with the same name stop studykit loading at all.
+
+`--verbose` also prints notes:
+
+- a topic with no card
+- a level with no calibration brief
+- a question that states figures with no derivation
+- a derivation step whose result is never quoted
+- a question of another type that uses the `discrimination` ask
+- a topic with no questions at one of its levels. This is the most common gap.
+- a level that does not have enough questions, spread across enough sub-topics, to supply the mix in [question-types.md](question-types.md#levels)
+
+Then use the pack:
 
 ```
 ./study packs enable <your-pack>
 ./study plan 25m
 ```
 
-The fastest way to find a weak card is to be quizzed on it. A question you cannot answer from the card is a card problem, not a question problem.
+The quickest way to find a weak card is to be quizzed on it. If you cannot answer a question from the card, fix the card, not the question.

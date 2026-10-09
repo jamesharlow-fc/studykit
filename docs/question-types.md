@@ -1,78 +1,80 @@
 # Question types
 
-Five types. Every banked question declares one. Scoring by type is what separates "does not know it" from "cannot apply it", which need opposite remedies.
+Each question has one of five types. Scores are kept per type, so you can tell whether you are missing the knowledge or failing to apply it. Those need different fixes.
 
 ## Why not just recall
 
-Retrieval practice reliably produces near transfer and repeatedly fails to produce far transfer on complex problem-solving. The failure has a name, the **inert knowledge problem**: holding the knowledge but not recognising that a situation calls for it. That is the actual failure mode past a junior level, so recall is the floor of this system, not its substance.
+Retrieval practice helps you answer questions like the ones you practised (near transfer). Whether it helps you apply knowledge to new, complex problems (far transfer) is disputed. See "Contested" in [research.md](research.md).
+
+Past junior level, the usual failure is the **inert knowledge problem**: you know the thing but do not notice that a situation calls for it. So recall questions are a small part of the mix at higher levels.
 
 ## The ladder
 
 ### `recall`: what is it
 
-Straight retrieval. One line.
+Plain retrieval. One line.
 
 > What is the boundary defect in a fixed-window counter?
 
-The floor. Cheap to author, cheap to answer, weakest signal. Necessary at graduate level, where the vocabulary is still being built, and close to worthless at staff.
+Cheap to write and answer, but tells you the least. Needed at graduate level, where people are still learning the vocabulary. Of little use at staff.
 
 ### `discrimination`: which is it, and what separates them
 
-Two or more confusable things; name the axis.
+Two or more things that are easily confused. The answer names what tells them apart.
 
 > Cache-aside and write-back get confused constantly. What axis actually separates them?
 
-Detects **conflation**, which recall cannot. Conflation produces confident wrong answers, so it scores 2 and is the highest-value thing to catch. Author these as contrasting pairs that share surface features and differ in deep structure.
+This catches **conflation**, which recall cannot. Conflation produces confident wrong answers, which score 2. Write these as pairs that look alike on the surface but work differently underneath.
 
 ### `judgment`: does this change the answer
 
-A design context, then new information. Does an option become more or less appropriate?
+A design context, then a new piece of information. Does an option become more or less appropriate?
 
 > You are leasing rate-limit tokens locally across 500 nodes. New information: this tenant's limit is 10 per minute. Does local leasing become more or less appropriate?
 
-Answered as `-2 -1 0 +1 +2` plus a clause of why. Near-zero typing for a genuinely hard question.
+The answer is `-2 -1 0 +1 +2` plus a short reason, so a hard question needs little typing.
 
-End with "More or less appropriate?" or whichever variant fits, so the candidate knows whether you want the rating, the remedy, or both. See [The ask](#the-ask).
+End with "More or less appropriate?" or whichever variant fits, so the candidate knows whether you want the rating, the fix, or both. See [The ask](#the-ask).
 
-Adapted from script concordance testing in medical education, which assesses reasoning under uncertainty rather than knowledge. **This is the type that targets far transfer.**
+This is adapted from script concordance testing in medical education, which tests reasoning under uncertainty rather than knowledge. **This is the type aimed at far transfer.**
 
-A good judgment question has a defensible answer that is not obvious, and sometimes the honest answer is 0: "it depends, and here is what on". Questions where the new information trivially settles it are recall in disguise.
+A good judgment question has a defensible answer that is not obvious. Sometimes the right answer is 0: "it depends, and here is what on". If the new information settles it trivially, the question is really recall.
 
 ### `diagnostic`: symptom to cause
 
-Give the observation, ask for the mechanism.
+Give what was observed and ask for the mechanism.
 
 > p99 tripled, error rate flat, cache hit rate unchanged. Most likely cause?
 
-Reverses the direction of reasoning. Forward design and backward diagnosis are different skills, and both show up in real work and in interviews.
+This runs the reasoning backwards. Designing and diagnosing are different skills. You need both at work and in interviews.
 
 ### `numeric`: put a number on it
 
 > 500 nodes, 10-token leases, a limit of 1,000,000. Overshoot as a percentage?
 
-One number, no prose. Targets the common habit of correct reasoning with the arithmetic left implicit. The answer should include the working, so a wrong number can be diagnosed as an arithmetic slip or a modelling error.
+One number, no prose. It targets a common habit: reasoning correctly but never doing the arithmetic. The answer should show the working, so a wrong number can be traced to either an arithmetic slip or a wrong model.
 
 ## The ask
 
-**The stem ends with the ask, and the ask names what it wants.** The type is not visible to whoever answers it, so the wording is the only thing telling them which of several reasonable questions is being put. An answer graded against an ask the stem did not make measures nothing, and it scores the candidate for reading the question as written.
+**End the stem with a clear ask.** The person answering cannot see the type, so the wording is the only thing telling them which of several reasonable questions you mean. If you grade an answer against a question the stem did not ask, the score is meaningless. You have marked the candidate down for answering the question they were given.
 
 The phrasings are not interchangeable:
 
 | What you want | The ask | Type |
 |---|---|---|
-| the axis between confusable things | "what separates them?" | `discrimination` |
+| what tells confusable things apart | "what separates them?" | `discrimination` |
 | the cause behind a symptom | "most likely cause?" | `diagnostic` |
 | a test that tells two candidate causes apart | "what would you check to tell which?" | `diagnostic` |
-| whether new information moves a decision | "more or less appropriate?" | `judgment` |
+| whether new information changes a decision | "more or less appropriate?" | `judgment` |
 | a figure, with the working | "how much, and what is that in ...?" | `numeric` |
 
-**"What separates them" belongs to `discrimination`.** A `diagnostic` that offers two candidate causes and wants a distinguishing test has to say so. Asked as "what separates them", the correct answer is the conceptual difference between the two, which is a different question with a different answer, and the one the phrasing promised.
+**"What separates them" belongs to `discrimination`.** If a `diagnostic` offers two candidate causes and wants a test to tell them apart, it has to say so. Asked as "what separates them", the correct answer is the conceptual difference between the two. That is a different question from the one you meant.
 
-Where a stem lists candidates, say what they are candidates for. "Two candidates" on its own reads as two scenarios to consider.
+If a stem lists candidates, say what they are candidates for. "Two candidates" on its own reads as two scenarios to consider.
 
 ## Multiple choice
 
-Use sparingly, and only where **the distractors are the content**: picking between five named consistency models, say, because discriminating the alternatives is itself the skill. Everywhere else use free recall: recognition lets you confirm "I knew that" without ever retrieving, and recognition is theorised as the main thing impeding transfer.
+Use it rarely, and only where **the wrong options are the content**. For example, choosing between five named consistency models, where telling the options apart is the skill. Everywhere else, use free recall. With multiple choice you can recognise the answer and think "I knew that" without ever recalling it. Recognition is thought to be the main thing that blocks transfer.
 
 ## Levels
 
@@ -82,9 +84,9 @@ Every question declares which levels it suits:
 levels = ["senior", "lead", "staff"]
 ```
 
-The type ladder and the level ladder are correlated but not the same. A graduate-appropriate `judgment` question exists; it just has a smaller design context and a clearer answer. A staff-level `recall` question exists too, and is usually a waste of a slot.
+Question type and level are related but not the same. A `judgment` question for graduates exists: it has a smaller design context and a clearer answer. A staff-level `recall` question can exist too, but it is usually a wasted slot.
 
-Bank composition per level:
+The target mix of question types in a draw, per level:
 
 | Level | recall | discrimination | judgment | diagnostic | numeric |
 |---|---:|---:|---:|---:|---:|
@@ -92,30 +94,32 @@ Bank composition per level:
 | mid | 25% | 30% | 25% | 10% | 10% |
 | senior+ | 10% | 25% | 35% | 15% | 15% |
 
-`studykit/balance.py` holds these numbers, `select.qtype_weights` draws to them, and `./study doctor --verbose` reports a level that cannot supply them. Change them in one place or the other and the three disagree.
+These numbers live in `studykit/balance.py`. `select.qtype_weights` starts from them and `./study doctor --verbose` checks each level against them. If you change them there, update this table too.
 
-**The unit is the level, not the pack.** A question declares the levels it suits, so one bank holds a different drawable pool per level, each with its own row above. A pack can sit on target in aggregate while its graduate pool is 90% recall. Authoring against the aggregate is what produces that.
+The mix is only a starting point. As scores are recorded, types you answer well are asked less and weak types more. `PRIOR_STRENGTH` in `studykit/select.py` sets how much evidence that takes.
 
-**Author for coverage, not for share.** A draw walks the due facets and asks each one for a question of the type the mix wants, so what caps a type is the proportion of facets that hold one at all. Twenty judgment questions on one facet raise the pool's share and change nothing a draw can use. Nor is a surplus a defect: `qtype_weights` sets the share, so extra recall is drawn less often rather than crowding anything out. The number to move is how many facets have one of each type.
+**Each level has its own pool of questions.** A question is only in the pools for the levels it lists. Each pool is checked against its own row in the table above. A pack can hit the targets overall while its graduate questions are 90% recall. This happens if you only check the overall numbers.
 
-`senior+` is one row because above mid the intended mix does not change. What separates senior from staff is the calibration brief, not the question.
+**Write for coverage, not for share.** A draw goes through the due facets and asks each one for a question of the type the mix wants. So what limits a type is how many facets have a question of that type at all. Twenty judgment questions on one facet raise judgment's share of the pool but give a draw nothing new. Too many of one type is not a problem either: `qtype_weights` sets the share, so extra recall questions are just drawn less often. The number to raise is how many facets have one question of each type. `doctor` flags a level when a type is in fewer than 80% of the facets its mix needs.
 
-`./study progress` shows your measured mean per type: a high `recall` with a low `judgment` means the knowledge is there and inert.
+`senior+` is one row because the target mix is the same for senior, lead and staff. What separates those levels is the calibration brief, not the questions.
+
+`./study progress` shows your average score per type. A high `recall` with a low `judgment` means you know the material but are not applying it.
 
 ## Stems are self-contained
 
-The topic is never named when a question is asked. Warrant: [research.md](research.md), interleaving and spacing.
+The topic is never named when a question is asked. The reason is in [research.md](research.md), under interleaving and spacing.
 
-Everything needed to fix the frame therefore has to be in the stem, written as scenario rather than as a label.
+So the stem has to carry everything needed to set the frame, written as a scenario rather than a label.
 
 > What should an error response contain besides a status code?
 
-Unanswerable. HTTP mandates nothing beyond the status code, so a candidate reading this as a protocol question is right to say "nothing", and a candidate reading it as a design question answers something else entirely. The two readings do not overlap.
+This cannot be answered. HTTP requires nothing beyond the status code, so a candidate who reads it as a protocol question is right to say "nothing". A candidate who reads it as a design question gives a different answer. The two readings do not overlap.
 
 > You are designing a JSON API. A mobile client calls it, a third-party integrator also calls it, and your support team fields tickets about it. A request fails. Beyond the status code, what goes in the response body?
 
-Same knowledge tested, frame fixed, and nothing pre-activated. "This is an API design question" would also fix the frame, but it names the topic and hands over half the retrieval.
+This tests the same knowledge, with the frame set and no hint at the answer. "This is an API design question" would also set the frame, but it names the topic and does half the recall for them.
 
-A `judgment` stem carrying a time constraint has a second frame to fix: **design or lever**. "Prices must be visible within 60 seconds" reads as a standing requirement to one candidate and as an incident to another, and the right answers are disjoint - restructure what is cached, versus fire the purge and accept the herd. Say which you are asking for.
+A `judgment` stem with a time constraint has a second frame to set: **design or lever**. "Prices must be visible within 60 seconds" reads as a standing requirement to one candidate and as an incident to another. The right answers do not overlap: change what is cached, or fire the purge and accept the thundering herd. Say which one you are asking for.
 
 The test: if a stem needs a topic label to be answerable, it is missing a sentence.

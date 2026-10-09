@@ -1,17 +1,17 @@
 # studykit
 
-A spaced-repetition study kit for engineering knowledge, driven by a coding agent.
+A spaced-repetition study kit for engineering knowledge. You run it through a coding agent.
 
-You tell it how long you have. It decides what you work on, asks questions calibrated to your level, scores you before it teaches you anything, and schedules what comes back and when. The scheduling, scoring and metrics are code; the teaching is an agent; the content is data.
+You say how much time you have. The agent picks what to work on, asks questions pitched at your level, and scores your answers before teaching you anything. The code then decides when each topic comes back. Scheduling, scoring and metrics are Python. The questions and material are data files. The agent does the teaching.
 
 ```
 git clone <this repo> && cd studykit
 ./study setup
 ```
 
-Then say **`study 25m`** to your coding agent. Claude Code and Codex both work out of the box; so does anything else that reads `AGENTS.md`.
+Then tell your coding agent **`study 25m`**. It works with Claude Code, Codex, and any other agent that reads `AGENTS.md`.
 
-No dependencies, no install, no account. Python 3.12+ and a shell.
+You need Python 3.12+ and a shell. There is nothing to install.
 
 ---
 
@@ -19,13 +19,13 @@ No dependencies, no install, no account. Python 3.12+ and a shell.
 
 | Say | Get |
 |---|---|
-| `study 25m` / "I've got an hour" | a session composed from the due queue to fit the box |
-| `quiz` | rapid-fire questions, judgment-weighted, low typing |
-| `practice` | a full design problem, coaching or interview mode |
-| `learn <topic>` | taught properly - tested first, then taught to the gap |
-| `progress` | what's due, what's weak, what's never been measured |
+| `study 25m` / "I've got an hour" | a session built from what is due, sized to the time you have |
+| `quiz` | quick questions with short answers, mostly judgment |
+| `practice` | a full design problem, in coaching or interview mode |
+| `learn <topic>` | a test first, then teaching aimed at what you got wrong |
+| `progress` | what is due, what is weak, and what you have never been tested on |
 
-`study` is the default.
+If you are not sure, use `study`.
 
 ## What ships with it
 
@@ -40,13 +40,17 @@ No dependencies, no install, no account. Python 3.12+ and a shell.
 
 `graduate` · `mid` · `senior` · `lead` · `staff`
 
-Your level does three things: sets the mix of question types you are asked, filters which topics and problems are in scope, and sets the **calibration brief** the agent judges you against. At graduate, a correct mechanism scores well. At staff, an unquantified claim with no failure mode does not.
+Your level sets three things:
 
-The mix is a starting point rather than a rule: your measured score per type moves it, so a type you answer well is asked less often. Questions written for other levels are deprioritised, never withheld.
+- **The mix of question types.** Graduates get more recall. Seniors and above get more judgment.
+- **Which topics and problems you see.** A graduate is not asked about multi-region failover.
+- **The bar for each score.** At graduate, explaining the mechanism correctly scores well. At staff, a claim with no numbers and no failure mode does not.
+
+The mix changes as you go. Question types you answer well come up less often. Questions written for other levels come up less often too, but are never hidden.
 
 ```
-./study levels                    # see every level's bar
-./study config set level lead     # change it
+./study levels                    # see the bar for every level
+./study config set level lead     # change your level
 ```
 
 ## How a session goes
@@ -64,83 +68,94 @@ agent: Recorded. caching/hot-key 2 -> 3, next 7 Aug. Two facets came back 2;
        both got a worked example and a variant re-test.
 ```
 
-Then `./study dashboard --open` for the charts.
+Run `./study dashboard --open` afterwards to see charts.
 
-## The design
+## Why it works this way
 
-Retrieval practice reliably builds near transfer and reliably fails to build far transfer, which is what matters past a junior level. So the unit of assessment is judgment, not facts: five question types weighted towards judgment and discrimination, interleaved across topics without announcing which topic a question comes from. Everything is measured at sub-topic granularity, scheduled only on cold-recall scores taken before any teaching, and never inferred from adjacent evidence. Self-reported confidence is captured but kept strictly away from scheduling, where it feeds a calibration metric instead. Every mechanism traces to a citation in [docs/research.md](docs/research.md), including the two places the evidence is genuinely contested.
+Past junior level, knowing a fact is rarely the problem. Spotting when it applies is. So there are five question types, and the higher your level, the more of them test judgment rather than recall.
+
+The other rules:
+
+- Topics are mixed together, and the agent does not say which topic a question is from.
+- You are scored before you are taught. Only that first score decides when a topic comes back.
+- Scores are kept per sub-topic. A good score on one never counts towards another.
+- You can say how confident you are. That shows how well you judge your own knowledge. It never affects scheduling.
+
+[docs/research.md](docs/research.md) gives the source for each rule, and lists where the evidence is disputed.
 
 ## Your data
 
-Everything you generate lives in `~/.studykit`, outside this checkout, so your history outlives any particular clone:
+Your data is stored in `~/.studykit`, not in this checkout, so you can delete or re-clone the repo without losing it.
 
 ```
 profile.json      your level and preferences
-ledger.jsonl      append-only history of every measurement
-state.json        current strength and due dates, derived
-metrics.json      computed metrics, derived
-bank/             questions generated during your sessions
+ledger.jsonl      every score you have recorded, append-only
+state.json        current strength and due dates, built from the ledger
+metrics.json      metrics, built from the ledger
+bank/             questions written during your sessions
 attempts/         your problem attempts
 packs/            packs you installed
-dashboard.html    generated charts
+dashboard.html    charts
 ```
 
-`XDG_DATA_HOME` is honoured where it is set. `STUDYKIT_DATA` overrides both, which is also how you run more than one profile.
+If `XDG_DATA_HOME` is set, studykit uses it. `STUDYKIT_DATA` overrides both. Set it to a different directory to keep a separate profile.
 
 Nothing leaves your machine unless you ask it to.
 
-### Syncing it
+### Syncing between machines
 
-The ledger is the one thing here that cannot be regenerated. Give it a private repository of its own:
+The ledger is the only file you cannot rebuild, so back it up. Put it in a private git repository:
 
 ```
 ./study sync init git@github.com:you/studykit-data.git --auto
 ```
 
-That makes the data directory its own git repository and turns on both halves: `./study plan` pulls before a session, `./study record` pushes after it. `./study sync` and `./study sync pull` do each by hand; `./study sync status` says what is outstanding. Derived files stay untracked.
+This turns `~/.studykit` into a git repository. With `--auto`, `./study plan` pulls before each session and `./study record` pushes after it. Files built from the ledger are not committed.
 
-The ledger carries a `merge=union` attribute, so two machines that both studied while offline keep both sets of rows rather than conflicting. On a second machine, clone the data repo into `~/.studykit` and carry on.
+To sync by hand, run `./study sync` to push and `./study sync pull` to pull. `./study sync status` shows what has not been synced yet.
+
+If you study on two machines while offline, both sets of scores are kept when you next sync. They do not conflict. To set up a second machine, clone your data repository into `~/.studykit`.
 
 ## Commands
 
 ```
-./study setup                     interactive first run
-./study status                    one screen: what's due, what's next
+./study setup                     first-run setup
+./study status                    what is due and what is next
 ./study progress                  full report
-./study plan 25m                  compose a session (JSON, for the agent)
-./study questions --count 8       draw questions (JSON, for the agent)
-./study card caching              print a knowledge card
+./study plan 25m                  build a session (JSON, for the agent)
+./study questions --count 8       pick questions (JSON, for the agent)
+./study card caching              print the notes for a topic
 ./study problem --list            problems at your level
-./study record --json-text '...'  append measurements, rebuild everything
-./study dashboard --open          self-contained HTML charts
-./study packs                     what content exists, how covered it is
-./study sync                      push your data to its private repo
-./study doctor                    validate packs and data
-./study test                      run the test suite with Python 3.12+
+./study record --json-text '...'  save scores and rebuild state
+./study dashboard --open          HTML charts in one file
+./study packs                     installed content and how much you have covered
+./study sync                      push your data to its repository
+./study doctor                    check packs and data for errors
+./study test                      run the tests
 ```
 
-Full reference: [docs/cli.md](docs/cli.md).
+Every command and flag: [docs/cli.md](docs/cli.md).
 
 ## Documentation
 
 | File | What it covers |
 |---|---|
-| [docs/scoring.md](docs/scoring.md) | the measurement and scheduling model, in full |
-| [docs/research.md](docs/research.md) | the evidence base every mechanism traces to |
-| [docs/question-types.md](docs/question-types.md) | the five question types and why judgment is weighted |
-| [docs/techniques.md](docs/techniques.md) | the block menu the session composer draws from |
-| [docs/levels.md](docs/levels.md) | how levels filter content and set the bar |
+| [docs/scoring.md](docs/scoring.md) | how answers are scored and scheduled |
+| [docs/research.md](docs/research.md) | the research behind each rule |
+| [docs/question-types.md](docs/question-types.md) | the five question types |
+| [docs/techniques.md](docs/techniques.md) | the kinds of block a session is built from |
+| [docs/levels.md](docs/levels.md) | what your level changes |
 | [docs/authoring-packs.md](docs/authoring-packs.md) | writing your own pack |
 | [docs/cli.md](docs/cli.md) | every command and flag |
-| [docs/architecture.md](docs/architecture.md) | how the pieces fit, and why the split is where it is |
+| [docs/architecture.md](docs/architecture.md) | how the code is organised |
 
 ## Requirements
 
-Python 3.12 or newer, and a POSIX shell. If `python3` on your PATH is older, set `STUDYKIT_PYTHON=/path/to/python3.12`.
+Python 3.12 or newer, and a POSIX shell. If the `python3` on your PATH is older, set `STUDYKIT_PYTHON=/path/to/python3.12`.
 
-Tests: `./study test --verbose`
+Run the tests with `./study test --verbose`.
 
-Working on it? `git config core.hooksPath .githooks` runs the tests and `doctor` before every push. `git push --no-verify` skips them once.
+If you are working on studykit, run `git config core.hooksPath .githooks`. The tests and `doctor` will then run before every push. To skip them once, use `git push --no-verify`.
 
 ## Licence
 

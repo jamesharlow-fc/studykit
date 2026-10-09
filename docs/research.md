@@ -1,72 +1,72 @@
 # Evidence base
 
-Why the engine works the way it does. Each finding is recorded with the mechanism it licenses, and earns a place here only if it changes what the engine does.
+The research behind each rule in the engine. A finding is only listed here if it changes what the engine does.
 
 ## Retrieval before instruction
 
-**Finding.** Attempting retrieval and failing, before being taught, improves later retention over studying the material directly. Richland, Kornell & Kao (2009) named this the pretesting effect; it sits inside Bjork's desirable difficulties (1994) and the wider testing effect (Roediger & Karpicke 2006).
+**Finding.** Trying to recall an answer and failing, before being taught, helps people remember more later than studying the material directly. Richland, Kornell & Kao (2009) called this the pretesting effect. It is part of Bjork's desirable difficulties (1994) and the wider testing effect (Roediger & Karpicke 2006).
 
-**What it licenses.** Cold measurement always comes first. `measured` is the pre-teaching score and is the only field that schedules. No session teaches before it tests.
+**What the engine does.** It always tests first. `measured` is the score before any teaching. It is the only field that affects scheduling.
 
-**The boundary.** In these studies instruction *immediately follows* the pretest. The failed attempt is a primer for a lesson, not a substitute for one.
+**The limit.** In these studies, teaching comes *straight after* the pretest. The failed attempt prepares the learner for a lesson. It does not replace one.
 
-## Prior knowledge gates unguided struggle
+## Some prior knowledge is needed first
 
-**Finding.** Two literatures point opposite ways and the disagreement is real. Kapur's productive failure work (2008; Kapur & Bielaczyc 2012) shows learners who attempt problems before instruction outperform those taught first, on transfer especially. Kirschner, Sweller & Clark (2006) argue minimal guidance imposes extraneous cognitive load on novices and loses to worked examples.
+**Finding.** Two sets of studies disagree. Kapur's work on productive failure (2008; Kapur & Bielaczyc 2012) shows that learners who try problems before being taught do better than those taught first, especially at applying it to new problems. Kirschner, Sweller & Clark (2006) argue that giving beginners little guidance overloads them, and that worked examples do better.
 
-The condition that separates them is prior knowledge. Kapur is explicit that productive failure needs learners to hold the requisite prior knowledge resources to generate candidate representations.
+What separates the two is prior knowledge. Kapur says productive failure only works when learners already know enough to come up with possible answers.
 
-**What it licenses.** The cold attempt is never skipped, but what follows it scales with how badly it went. A score of 1-2 signals there was nothing to generate from, and triggers a worked example rather than a paragraph of correction. See the follow-up ladder in [scoring.md](scoring.md).
+**What the engine does.** It never skips the first attempt, but what comes next depends on how badly it went. A score of 1-2 means there was nothing to build on, so the agent gives a worked example rather than a paragraph of correction. See the table of what follows an answer in [scoring.md](scoring.md).
 
-**It also licenses levels.** The same question is a desirable difficulty for a senior engineer and an impossible one for a graduate. Filtering the bank by level is this finding applied to content selection rather than to feedback.
+**This is also why there are levels.** The same question is a useful challenge for a senior engineer and an impossible one for a graduate. Filtering questions by level applies this finding to what gets asked, not just to feedback.
 
-## Worked examples reverse with expertise
+## Worked examples stop helping as you improve
 
-**Finding.** Worked examples beat unguided problem solving for novices (Sweller & Cooper 1985) and actively harm performance once the learner has the schema, because processing the redundant guidance costs working memory. Kalyuga, Ayres, Chandler & Sweller (2003), the expertise reversal effect.
+**Finding.** Beginners learn more from worked examples than from solving problems unaided (Sweller & Cooper 1985). Once the learner understands the topic, worked examples make them perform worse, because reading guidance they do not need uses up working memory. This is the expertise reversal effect (Kalyuga, Ayres, Chandler & Sweller 2003).
 
-**What it licenses.** Technique is selected by strength, not by preference. Faded worked examples at 1-2, judgment and diagnostic work at 4-5. Fade the guidance as strength rises rather than teaching the same way at every level. It is also why the ladder tells the agent to say **one line** at 4-5 rather than confirming at length.
+**What the engine does.** It picks the block by strength: a worked example at 1-2, a diagnostic question at 3. Guidance drops off as strength rises. At 4-5 the agent gives **one line** of feedback, not a long confirmation.
 
-## Feedback needs a second retrieval
+## Feedback needs a second attempt
 
-**Finding.** Corrective feedback after a failed attempt helps, and helps substantially more when the learner then retrieves the corrected answer themselves rather than only reading it. Repeated retrieval with feedback outperforms feedback alone across the testing-effect literature (Butler, Karpicke & Roediger 2008; Pashler et al. 2005).
+**Finding.** Feedback after a failed attempt helps. It helps much more if the learner then recalls the corrected answer themselves, rather than only reading it. Across the testing-effect research, repeated recall with feedback beats feedback alone (Butler, Karpicke & Roediger 2008; Pashler et al. 2005).
 
-**What it licenses.** A 1-2 gets re-tested on a **variant** later in the same session, recorded as `post`. Reading a good explanation produces fluency that feels like learning; only the second retrieval shows whether anything was encoded.
+**What the engine does.** A 1-2 is re-tested later in the same session on a **different version** of the question, recorded as `post`. Reading a good explanation feels like learning. Only a second attempt shows whether anything stuck.
 
-The re-test must be a variant, never the same question. Recognition lets a learner confirm "I knew that" without retrieving anything.
+The re-test must be a different version, never the same question. With the same question, the learner can recognise the answer and think "I knew that" without recalling anything.
 
 ## Interleaving and spacing
 
-**Finding.** Interleaved practice beats blocked practice for both retention and problem-solving, and it is specifically what builds the ability to discriminate which concept applies (Rohrer & Taylor 2007; Rohrer, Dedrick & Stershic 2015). Distributed practice beats massed practice, with the optimal gap scaling to the retention interval (Cepeda et al. 2006).
+**Finding.** Mixing topics within a session (interleaving) beats practising one topic at a time, both for remembering and for solving problems. It is what teaches people to tell which idea applies (Rohrer & Taylor 2007; Rohrer, Dedrick & Stershic 2015). Spreading practice out beats cramming. The best gap between sessions grows with how long you need to remember it (Cepeda et al. 2006).
 
-**What it licenses.** Sessions mix topics and never announce which topic a question is from. The queue builder deliberately rotates through topics rather than exhausting one, so that interleaving has something to interleave. Scheduling is expanding-interval, driven by `measured` alone.
+**What the engine does.** Sessions mix topics and never say which topic a question is from. The queue rotates through topics rather than finishing one first, so there is something to mix. Intervals grow with each good score. Only `measured` sets them.
 
-## Fluency is not learning
+## Feeling fluent is not the same as learning
 
-**Finding.** Learners under active methods judge that they have learned less while measurably learning more (Deslauriers et al. 2019). Separately, people substantially overestimate their ability to explain mechanisms until asked to actually do it: the illusion of explanatory depth (Rozenblit & Keil 2002).
+**Finding.** Learners taught with active methods think they have learned less, while measurably learning more (Deslauriers et al. 2019). Separately, people overestimate how well they can explain how something works until they are asked to do it. This is the illusion of explanatory depth (Rozenblit & Keil 2002).
 
-**What it licenses.** Self-report never touches scheduling. `predicted` is captured only to compute calibration error, and the composer fires a teach-back block when it runs above `measured`.
+**What the engine does.** How confident the user says they are never affects scheduling. `predicted` is only used to work out calibration error. When `predicted` runs more than 0.5 above `measured` on average, `./study plan` adds a teach-back block.
 
-## Recognition impedes transfer
+## Recognising an answer is not recalling it
 
-**Finding.** The failure mode at this level is not absent knowledge but unrecognised applicability: the inert knowledge problem. Multiple choice permits confirmation without retrieval.
+**Finding.** At this level, the problem is rarely missing knowledge. It is not noticing that the knowledge applies, which is known as the inert knowledge problem. Multiple choice lets a learner recognise the right answer without recalling it.
 
-**What it licenses.** Free recall by default. Multiple choice only where discriminating the named alternatives is itself the skill. See [question-types.md](question-types.md).
+**What the engine does.** Questions are free recall by default. Multiple choice is only used where telling the listed options apart is the skill being tested. See [question-types.md](question-types.md).
 
 ## Contested
 
-- **Does retrieval practice produce far transfer?** [question-types.md](question-types.md) asserts it reliably produces near transfer and often fails at far transfer. That is roughly Van Gog & Sweller's (2015) position, that the testing effect shrinks as element interactivity rises; Karpicke & Aue (2015) rebutted it. The engine hedges by weighting the bank towards `judgment` and by treating full problems as the only integration measure, which is defensible under either reading.
+- **Does retrieval practice help with new kinds of problem?** It helps with problems like the ones practised (near transfer). Whether it helps with different ones (far transfer) is disputed. Van Gog & Sweller (2015) argue that the testing effect shrinks as material gets more complex. Karpicke & Aue (2015) disagree. The engine allows for both views. It weights questions towards `judgment`, and treats full problems as the only test of combining ideas.
 
-- **Productive failure versus direct instruction.** Genuinely unresolved. The prior-knowledge boundary above is where the two camps come closest, not a proven constant. Effect sizes vary with domain and with how structured the failure phase is.
+- **Productive failure or direct instruction first?** This is unresolved. The prior-knowledge limit above is where the two sides come closest, but it is not proven. Results vary with the subject and with how much structure the failure phase has.
 
-- **Optimal spacing intervals.** The SM-2 style multipliers in [scoring.md](scoring.md) are conventional, not derived from this literature. Cepeda et al. support expanding intervals scaled to the retention interval; the specific numbers (1.6 / 2.2 / 3.0) are a guess and should be treated as one. If you have data, change them.
+- **The best spacing intervals.** The SM-2 style multipliers in [scoring.md](scoring.md) are common practice, not taken from this research. Cepeda et al. support intervals that grow and that scale with how long you need to remember. The specific numbers (1.6 / 2.2 / 3.0) are a guess. If you have data, change them.
 
-## Where this shows up
+## Where each rule is implemented
 
-| Mechanism | Implemented in | Documented in |
+| Rule | Implemented in | Documented in |
 |---|---|---|
-| Cold-first, three constructs never merged | `studykit/ledger.py` | [scoring.md](scoring.md) |
-| Interval, reps cap, session-mean collapse | `studykit/schedule.py` | [scoring.md](scoring.md) |
-| Interleaving, technique by strength, budget composition | `studykit/select.py` | [techniques.md](techniques.md) |
-| Follow-up ladder, `post` semantics | the skills | [scoring.md](scoring.md) |
-| Question types, free-recall default | pack question banks | [question-types.md](question-types.md) |
-| Prior knowledge gating content | `levels` in `pack.toml` | [levels.md](levels.md) |
+| Score first, three fields kept separate | `studykit/ledger.py` | [scoring.md](scoring.md) |
+| Intervals, `reps` limit, same-day scores averaged | `studykit/schedule.py` | [scoring.md](scoring.md) |
+| Interleaving, block by strength, fitting a session to the time | `studykit/select.py` | [techniques.md](techniques.md) |
+| What follows an answer, what `post` means | the skills | [scoring.md](scoring.md) |
+| Question types, free recall by default | pack question banks | [question-types.md](question-types.md) |
+| Topics filtered by level | `levels` in `pack.toml` | [levels.md](levels.md) |

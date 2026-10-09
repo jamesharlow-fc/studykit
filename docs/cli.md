@@ -4,26 +4,26 @@
 ./study <command> [options]
 ```
 
-Global options work on either side of the command name:
+These options work before or after the command name:
 
-- `--date YYYY-MM-DD`: treat this as today, for what is due and how overdue it is. For testing, or for reading the queue as it stood. It never changes when a measurement happened.
-- `--json`: machine-readable output where a human view also exists.
+- `--date YYYY-MM-DD`: treat this date as today when working out what is due and how overdue it is. Use it for testing, or to see the queue as it was on a past date. It never changes when a measurement happened.
+- `--json`: print JSON instead of the human view, for commands that have both.
 - `--version`
 
-Environment:
+Environment variables:
 
 | Variable | Effect |
 |---|---|
 | `STUDYKIT_DATA` | where your data lives. Default `$XDG_DATA_HOME/studykit`, else `~/.studykit`. |
-| `STUDYKIT_PACKS` | where the shipped packs are read from. Default `<repo>/packs`. Installed packs always come from the data directory as well. |
-| `STUDYKIT_PYTHON` | which interpreter to use, if `python3` is older than 3.12. |
-| `STUDYKIT_TODAY` | override today's date, for `as_of` reasoning. |
-| `STUDYKIT_NOW` | override the timestamp new rows are stamped with. |
-| `NO_COLOR` | disable colour. |
+| `STUDYKIT_PACKS` | where the shipped packs are read from. Default `<repo>/packs`. Packs you installed are always read from the data directory as well. |
+| `STUDYKIT_PYTHON` | the Python to use, if `python3` is older than 3.12. |
+| `STUDYKIT_TODAY` | today's date, for working out what is due. |
+| `STUDYKIT_NOW` | the timestamp put on new rows. |
+| `NO_COLOR` | turn off colour. |
 
-Errors exit `2` with a one-line message on stderr and no traceback. `doctor` and `test` exit `1` when they find problems.
+On an error, the command prints one line to stderr and exits `2`. There is no traceback. `doctor` and `test` exit `1` when they find problems.
 
-A command invoked with nothing to act on prints its own help and exits `0`, rather than treating the omission as an error. That covers `./study` itself, the commands that only group subcommands, and the ones that need an argument or a JSON payload to do anything.
+If you run a command without what it needs to do anything, it prints its help and exits `0`. This applies to `./study` on its own, to commands that only group subcommands, and to commands that need an argument or a JSON payload.
 
 ---
 
@@ -31,7 +31,7 @@ A command invoked with nothing to act on prints its own help and exits `0`, rath
 
 ### `setup`
 
-Interactive first run. Sets your level, packs, default session length and default problem mode, then creates the data directory.
+Asks for your level, packs, default session length and default problem mode, then creates the data directory.
 
 ```
 ./study setup
@@ -54,18 +54,18 @@ Options: `--level`, `--packs`, `--budget`, `--mode`, `--no-confidence`, `--non-i
 ./study config set sync_auto true
 ```
 
-Rebuilds state and metrics on any change.
+Every change rebuilds state and metrics.
 
 | Key | Effect |
 |---|---|
-| `level` | the interviewer bar, which topics are in scope, and the question-type mix |
-| `packs` | comma-separated, what is in rotation |
+| `level` | the bar answers are judged against, which topics are in scope, and the mix of question types |
+| `packs` | the packs in rotation, comma-separated |
 | `budget` | default session length |
 | `mode` | `coaching` or `interview` |
-| `confidence_prompt` | whether to ask for a pre-answer confidence |
-| `sync_remote` | git remote backing up the data directory. Set it with `sync init` |
-| `sync_branch` | branch on that remote. Default `main` |
-| `sync_auto` | push after every session that writes. Needs a remote first |
+| `confidence_prompt` | whether to ask how confident you are before you answer |
+| `sync_remote` | the git remote your data directory is backed up to. Set it with `sync init` |
+| `sync_branch` | the branch on that remote. Default `main` |
+| `sync_auto` | pull before each session and push after each write. Needs a remote first |
 
 ---
 
@@ -73,75 +73,79 @@ Rebuilds state and metrics on any change.
 
 ### `status`
 
-One screen: overdue count, due today, never tested, coverage, mean strength, and the recommended next session.
+One screen: how many facets are overdue, due today and never tested, your coverage, your mean strength, and the session to do next.
 
 ### `progress`
 
-The full report: due now, never measured, weakest facets, score by question type, calibration, thin evidence, uncovered areas, problems, and a recommendation. `--json` gives state, metrics and recommendation together.
+The full report: what is due, what has never been measured, your weakest facets, your score by question type, how well your confidence matches your scores, facets with little evidence, areas with no coverage, problems, and what to do next. `--json` returns state, metrics and the recommendation together.
 
 ### `queue`
 
-The ordered work list: overdue first, then due today, staler first within each band, with weakness breaking ties. Every third slot is held for a never-measured facet, so a backlog cannot starve discovery. `--limit N`, `--json`.
+The list of facets to work on, in order. Overdue comes first, then due today. Within each group, the longest-unseen comes first, and the weaker facet wins a tie. Every third slot goes to a facet that has never been measured, so a backlog of reviews cannot stop you meeting new material. Options: `--limit N`, `--json`.
 
 ### `packs`
 
-Every installed pack, marked `on` or `off` by whether it is in rotation, with per-topic coverage at your level.
+Lists every installed pack, marked `on` if it is in rotation and `off` if not, with coverage per topic at your level.
 
 ```
 ./study packs                         # what is installed, and what is on
-./study packs enable foundations      # add to the rotation
-./study packs disable design-patterns # remove from it
+./study packs enable foundations      # put a pack into rotation
+./study packs disable design-patterns # take it out
 ```
 
-Both take several names. Rotation is what `plan`, `questions` and `queue` draw from; an installed pack that is off stays listed and stays out of the queue. Taking the last pack out is refused, because an empty rotation means every pack rather than none.
+Both subcommands take several names. `plan`, `questions` and `queue` draw only from packs in rotation. A pack that is off is still listed, but nothing is drawn from it. You cannot take the last pack out: an empty rotation means every pack, not none.
 
 ### `levels`
 
-The level ladder and each enabled pack's calibration brief.
+The list of levels, and the calibration brief for each enabled pack.
 
 ### `card <topic>`
 
-Prints a knowledge card. `--pack` disambiguates if two packs share a topic id. `--json` wraps it with the topic's metadata.
+Prints the notes for a topic. Use `--pack` if two packs have a topic with the same id. `--json` adds the topic's metadata.
 
 ### `problem [slug]`
 
 ```
 ./study problem                       # the one the scheduler picks
-./study problem --list                # everything at your level, with history
-./study problem url-shortener         # the candidate-facing prompt
+./study problem --list                # every problem at your level, with your history
+./study problem url-shortener         # the prompt the candidate sees
 ./study problem url-shortener --notes # the interviewer notes
 ```
 
-**The prompt and the notes are separate files.** Without `--notes` the notes are unreachable, which is what makes it safe for an agent to fetch a problem mid-session.
+`--pack` picks the pack if the slug is ambiguous.
+
+**The prompt and the notes are separate files.** You only get the notes with `--notes`, so an agent can fetch a problem mid-session without seeing them.
 
 ### `export <what>`
 
-Prints `state`, `metrics`, `ledger` or `profile` as JSON, for piping elsewhere.
+Prints `state`, `metrics`, `ledger` or `profile` as JSON.
 
 ---
 
 ## Running a session
 
-These emit JSON and are meant for an agent.
+These commands print JSON for an agent to read.
 
 ### `plan [budget]`
 
-Composes a session to fit the budget: the calibration brief, blocks in order, questions already drawn and interleaved, and a queue preview.
+Builds a session that fits the time you have. It returns the calibration brief, the blocks in order, the questions already picked and mixed across topics, and a preview of the queue.
 
 ```
 ./study plan 25m
 ./study plan 1h
 ./study plan "half day"
-./study plan                          # your configured default
+./study plan                          # your default session length
 ```
 
-Options: `--level` (override for this call), `--mode`, `--seed N` (reproducible), `--no-problem`.
+Options: `--level` (for this call only), `--mode`, `--seed N` (same selection every time), `--no-problem`.
 
-Budgets accept `15m`, `1h`, `90`, `half day`, `full day`, `quick`, `open`.
+Budgets can be `15m`, `1h`, `90`, `half day`, `full day`, `quick` or `open`.
+
+With `sync_auto` on, `plan` pulls from your data repository first.
 
 ### `questions`
 
-Draws questions from the bank across the topics in scope at your level, ordered by the queue, interleaved across topics.
+Picks questions from the topics in scope at your level, in queue order, mixed across topics.
 
 ```
 ./study questions --count 8
@@ -149,11 +153,13 @@ Draws questions from the bank across the topics in scope at your level, ordered 
 ./study questions --qtype judgment --count 5
 ```
 
-Anything already recorded today is excluded, and unshown or long-unseen questions are preferred over recently answered ones.
+Other options: `--pack`, `--level`, `--seed N`.
 
-The type mix comes from your level and your measured means per type, described in [levels.md](levels.md#what-your-level-changes). Within a type, questions written for your level come first and the rest of the topic is the fallback.
+Questions you answered today are left out. Questions you have never seen, or not seen for a long time, are picked before ones you answered recently.
 
-The response includes `author_for`: facets with no question left to draw.
+Your level and your mean score per type decide the mix of question types. See [levels.md](levels.md#what-your-level-changes). Within a type, questions written for your level come first. The rest of the topic is used when those run out.
+
+The response includes `author_for`: facets that have no questions left to pick.
 
 ---
 
@@ -161,7 +167,7 @@ The response includes `author_for`: facets with no question left to draw.
 
 ### `bank add`
 
-Banks questions generated during a session. Assigns ids; never write ids yourself.
+Saves questions written during a session and gives them ids. Never write ids yourself.
 
 ```
 ./study bank add --json-text '{
@@ -173,17 +179,19 @@ Banks questions generated during a session. Assigns ids; never write ids yoursel
 }'
 ```
 
-Top-level `pack`, `topic` and `levels` act as defaults for every question; each question may override them. `levels` defaults to your level alone, since a question asked mid-session was written for the level it was asked at. Set it explicitly if the question suits a range.
+`pack`, `topic` and `levels` at the top level apply to every question. Any question can set its own. `levels` defaults to your level only, because a question written mid-session was written for the level it was asked at. Set it yourself if the question suits more than one level.
 
-Writes to `~/.studykit/bank/<pack>/<topic>.toml`, your private overlay, which merges with the pack at load time. The CLI assigns each id as `<prefix>-u<hash of the question>`. `--into-pack` writes into the pack's own directory instead, with a sequential id, for pack authors.
+Questions go to `~/.studykit/bank/<pack>/<topic>.toml`. This file is yours. It is merged with the pack when loaded. Each id is `<prefix>-u<hash of the question>`. Pack authors can pass `--into-pack` to write into the pack's own directory instead, with a sequential id.
 
-Also accepts `--file` or piped stdin.
+The payload can also come from `--file` or stdin. `--data` is the same as `--json-text`.
 
-A question stating a figure needs a `derivation`, and is refused without one, or if a figure in it matches no derivation result. Nothing is written when a batch is refused. See [authoring-packs.md](authoring-packs.md#figures-are-derived-not-asserted).
+A question that states a figure needs a `derivation`. It is refused if it has none, or if a figure in it does not match any result of the derivation. If any question in a batch is refused, nothing is written. See [authoring-packs.md](authoring-packs.md#figures-are-derived-not-asserted).
+
+With `sync_auto` on, `bank add` pushes after writing, unless `--into-pack` is set.
 
 ### `bank check`
 
-The same figure check, writing nothing. Use it **before** a question is asked, not after.
+Runs the same figure check without writing anything. Run it **before** you ask the question, not after.
 
 ```
 ./study bank check --json-text '{"questions": [
@@ -195,11 +203,11 @@ error: These figures match no derivation result: 350 ms.
        The derivation gives rtt_ms = 150, setup_ms = 450.
 ```
 
-Returns the figures it found and every value it computed, so it doubles as a way to see what the scanner considers a magnitude.
+It returns the figures it found and every value it computed. You can use it to see what the checker counts as a figure.
 
 ### `record`
 
-Appends measurements, then rebuilds `state.json` and `metrics.json`.
+Adds measurements to the ledger, then rebuilds `state.json` and `metrics.json`.
 
 ```
 ./study record --json-text '{
@@ -212,32 +220,34 @@ Appends measurements, then rebuilds `state.json` and `metrics.json`.
 }'
 ```
 
-`session`, `pack`, `at` and `level` at the top level are defaults for every row. A bare JSON array of rows also works.
+`session`, `pack`, `at` and `level` at the top level apply to every row. You can also pass a plain JSON array of rows. The payload can come from `--json-text`, `--file` or stdin.
 
-**When a row happened.** The ledger stores `at`, a full local timestamp with its offset, and a row is stamped with the moment it is recorded. Set `at` yourself only to be exact about a session you are writing up. `--date` is the `as_of` for the rebuild that follows and has no bearing on when a measurement happened.
+**When a row happened.** Each row has an `at` field: a full local timestamp with its UTC offset. By default it is the moment you record the row. Only set `at` yourself when writing up a past session and you know the exact time. `--date` only changes what counts as today for the rebuild. It does not change `at`.
 
-Scheduling works in whole days, read off `at`.
+Scheduling counts whole days, taken from `at`.
 
 | Field | Required | Notes |
 |---|---|---|
 | `session` | yes | `quiz` `practice` `review` `learn` `study` `drill` |
 | `pack` | yes | must be installed |
 | `topic` | yes | a pack topic, or `problem:<slug>` |
-| `subtopic` | yes | declared by the topic, or `overall` |
-| `measured` | yes | 1-5, the **cold** score |
+| `subtopic` | yes | one the topic declares, or `overall` |
+| `measured` | yes | 1-5, the score **before any teaching** |
 | `at` | no | ISO 8601 local timestamp. Defaults to now |
 | `qtype` | no | quiz rows only |
 | `qid` | no | must already be banked |
-| `predicted` | no | the user's own number. Omit if they did not give one |
-| `post` | no | variant re-test after teaching. Never schedules |
-| `taught` | no | true if the 1-2 branch ran |
+| `predicted` | no | the user's own number. Leave it out if they did not give one |
+| `post` | no | the score on a variant question after teaching. Never affects scheduling |
+| `taught` | no | true if the score was 1-2 and teaching followed |
 | `note` | no | free text, shown in reports |
 
-Rejected: unknown topics or subtopics, unknown question ids, scores outside 1-5, and any attempt to set a derived field (`strength`, `interval`, `due`, `reps`). `--dry-run` validates without writing.
+`record` rejects unknown topics or subtopics, unknown question ids, scores outside 1-5, and any row that sets a field the engine calculates (`strength`, `interval`, `due`, `reps`). `--dry-run` checks the rows without writing them.
+
+With `sync_auto` on, `record` pushes after writing.
 
 ### `rebuild`
 
-Recomputes `state.json` and `metrics.json` from the ledger. `record` does this automatically; you only need it after editing the ledger by hand or changing packs.
+Rebuilds `state.json` and `metrics.json` from the ledger. `record` does this for you. You only need it after editing the ledger by hand or changing packs.
 
 ### `dashboard`
 
@@ -247,7 +257,7 @@ Recomputes `state.json` and `metrics.json` from the ledger. `record` does this a
 ./study dashboard --out ~/study.html
 ```
 
-Writes a self-contained HTML page: inline CSS, inline SVG, no network requests. Light and dark, with a theme toggle.
+Writes a single HTML file with the CSS and SVG inline. It makes no network requests. It has light and dark themes and a toggle between them.
 
 ---
 
@@ -255,31 +265,35 @@ Writes a self-contained HTML page: inline CSS, inline SVG, no network requests. 
 
 ### `sync`
 
-Backs the data directory up to a git remote of your own. The tool repo and the data repo are separate: `studykit` can be public while your ledger is not.
+Backs up your data directory to a git repository you own. This is separate from the studykit repository, so studykit can be public while your ledger stays private.
 
 ```
 ./study sync init git@github.com:you/studykit-data.git
 ./study sync init git@github.com:you/studykit-data.git --auto
+./study sync init git@github.com:you/studykit-data.git --branch studykit
 ./study sync                          # commit what changed, push
 ./study sync -m "after the Friday session"
+./study sync pull                     # fetch, rebase onto the remote, rebuild state
 ./study sync status
 ```
 
-`init` makes the data directory its own git repository, points it at the remote, writes a `.gitignore` for the derived files, and pushes. It refuses when the remote already has history. Clone that into your data directory instead:
+`init` turns the data directory into a git repository, adds the remote, writes `.gitignore` and `.gitattributes`, and pushes. `--auto` also turns on `sync_auto`. `init` fails if the remote already has history. In that case, clone it into your data directory instead:
 
 ```
 rm -rf ~/.studykit && git clone git@github.com:you/studykit-data.git ~/.studykit
 ```
 
-Only the source of truth is tracked: `ledger.jsonl`, `profile.json`, `bank/` and `attempts/`. `state.json`, `metrics.json` and `dashboard.html` are rebuilt on every write, so committing them would produce a diff on every command and a conflict on every second machine.
+`.gitignore` leaves out the files rebuilt from the ledger (`state.json`, `metrics.json` and `dashboard.html`) and temporary files. The rebuilt files change on every write, so committing them would give you a diff after every command and a conflict on every second machine. `ledger.jsonl`, `profile.json`, `bank/` and `attempts/` are committed.
 
-With `sync_auto` on, every `record` and `bank add` pushes. A failed push never fails the session: the measurement is already on disk, and a warning tells you to run `./study sync` later.
+`.gitattributes` sets `merge=union` on `ledger.jsonl` and the bank files. If two machines both add rows while offline, the merge keeps both sets.
 
-`doctor` reports whether anything is unpushed, and flags a configured remote whose data directory is not a repository.
+With `sync_auto` on, `plan` pulls before a session, and `record` and `bank add` push after writing. A failed pull or push never fails the command. Your measurement is already saved locally. A warning tells you to run `./study sync` later.
+
+`sync status` shows the remote, the branch, and anything not yet pushed or pulled. `doctor` also notes anything not yet pushed, and reports a problem if a remote is set but the data directory is not a git repository.
 
 ### `test`
 
-Runs the repository test suite.
+Runs the test suite.
 
 ```
 ./study test
@@ -288,13 +302,33 @@ Runs the repository test suite.
 
 ### `doctor`
 
-Validates packs and data: missing cards, unknown subtopics in questions, duplicate ids, problems missing a prompt or notes, areas not declared, and every ledger row re-validated against the current taxonomy.
+Checks packs and data. It reports two kinds of finding: problems and notes.
 
-Notes also carry what each level can supply, against the targets in [question-types.md](question-types.md#levels): any level where too few facets hold a question of a type its mix will ask for, and any level holding fewer than two questions per in-scope facet. Both are notes rather than problems, since a target is an authoring guide.
+Problems:
+
+- a topic that declares no subtopics
+- a topic whose area is not in the pack's `areas`
+- a problem without a prompt or notes
+- a question naming an unknown topic or subtopic
+- a figure in a question that matches no result of its derivation
+- a ledger row that no longer validates against the current packs
+- a sync remote that is set when the data directory is not a git repository
+
+A duplicate question id stops the packs loading at all, so `doctor` exits with an error rather than listing it.
+
+Notes:
+
+- a topic with no card
+- a level with no calibration brief
+- a topic with no questions at one of its levels
+- whether each level has enough questions, measured against the targets in [question-types.md](question-types.md#levels): any level where too few facets have a question of a type that level's mix will ask for, and any level with fewer than two questions per in-scope facet
+- sync status, including anything not yet pushed
+
+Notes are not problems. The question targets, for example, are a guide for authors. By default `doctor` only counts the notes. `--verbose` lists them.
 
 ```
 ./study doctor
 ./study doctor --verbose      # also list notes, e.g. topics with no questions at a level
 ```
 
-Exits 1 if it finds problems.
+Exits `1` if it finds problems.

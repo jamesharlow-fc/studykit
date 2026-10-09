@@ -2,31 +2,31 @@
 
 ## The split
 
-Three parts, with a deliberate line between them.
+studykit has three parts:
 
-| Part | Is | Where |
+| Part | Does | Where |
 |---|---|---|
-| **Engine** | scheduling, scoring, selection, metrics | `studykit/`, pure Python stdlib |
+| **Engine** | scheduling, scoring, selection, metrics | `studykit/`, Python standard library only |
 | **Content** | topics, cards, questions, problems | `packs/` and `~/.studykit/packs/`, TOML and markdown |
 | **Teaching** | asking, judging, explaining | `.agents/skills/`, run by an agent |
 
-The line matters because each part fails differently. Deterministic logic that drifts between sessions is a bug you cannot see; content that lives in code cannot be shared; and judging an answer is not something you can write a function for.
+Each part does what the others cannot. An agent does not give the same result every time. Content stored in code is hard to share. Code cannot judge a free-text answer.
 
-**Anything that must be identical every time is code.** Interval arithmetic, queue order, question selection, coverage, metrics.
+**Anything that must be the same every time is code.** Interval arithmetic, queue order, question selection, coverage, metrics.
 
-**Anything requiring judgement is the agent.** Whether an answer named the tradeoff, whether a worked example landed, what the gap actually was.
+**Anything that needs judgement is the agent.** Whether an answer named the tradeoff, whether a worked example worked, what the gap actually was.
 
-## Documentation and instruction
+## Docs and skills
 
-**`docs/` describes.** What the system is, why the model is shaped this way, and how to author content. Read by a person, outside a session.
+**`docs/` describes.** What the system is, why it works this way, and how to write content. A person reads it, outside a session.
 
-**A skill instructs.** What to do while a session runs, addressed to the agent. Read at session time, and its cost is paid every session.
+**A skill instructs.** What the agent should do during a session. The agent reads it every session, so every word costs tokens every time.
 
-A rule about how to run a session therefore lives in the skill and nowhere else; the doc may say why the rule exists. Per-block instructions are a third case, emitted with the block by `select.py`.
+A rule about running a session belongs in the skill and nowhere else. A doc can explain why the rule exists. Instructions for a single block are a third case: `select.py` sends them out with the block.
 
 ## Agent harnesses
 
-One copy of every instruction, symlinked into the places each harness looks:
+There is one copy of every instruction, symlinked into the places each harness looks:
 
 ```
 AGENTS.md             the instructions
@@ -35,23 +35,23 @@ CLAUDE.md         ->  AGENTS.md
 .claude/skills/   ->  ../.agents/skills
 ```
 
-`.agents/` is Codex's repo-level convention and `AGENTS.md` is read by most agents; Claude Code wants `CLAUDE.md` and `.claude/skills/`, and follows both symlinks. `AGENTS.md` names the skills by path, so a harness that does not auto-discover them still finds them.
+Codex looks in `.agents/`. Most agents read `AGENTS.md`. Claude Code looks for `CLAUDE.md` and `.claude/skills/`, and follows both symlinks. `AGENTS.md` names each skill by path, so a harness that does not find skills on its own still finds them.
 
-Support a new harness by symlinking, never by copying. Two copies of a protocol drift, and the copy that drifts is the one nobody is reading.
+To support a new harness, add a symlink. Never copy. Two copies drift apart.
 
-## Token efficiency
+## Keeping sessions cheap
 
-The agent never reads pack files. That is what keeps a session cheap.
+The agent never reads pack files.
 
-`./study plan 25m` returns a session: the calibration brief, the blocks in order, and the twelve questions already drawn, filtered by level, and interleaved. A few kilobytes. Reading a manifest, three cards and four question banks instead costs a hundred times that and re-derives selection logic every time.
+`./study plan 25m` returns a whole session: the calibration brief, the blocks in order, and the questions already picked, filtered by level and mixed. That is a few kilobytes. Reading the manifest, three cards and four question banks instead costs about a hundred times as much. It also repeats the selection logic every time.
 
-The same principle runs through the rest of the surface:
+The rest of the CLI works the same way:
 
-- `plan` refers to cards and problems **by command**, not by inlining them. Most sessions never open one.
-- `record` takes a compact payload with top-level defaults, so a twelve-row session is a dozen short objects.
-- `progress` returns a rendered report rather than raw data to be interpreted.
+- `plan` points to cards and problems **by command** instead of including them. Most sessions never open one.
+- `record` takes a compact payload with shared defaults at the top, so a twelve-row session is twelve short objects.
+- `progress` returns a finished report, not raw data for the agent to interpret.
 
-Rule of thumb when extending it: **if the agent would have to read a file to decide something, the CLI should decide it and return the answer.**
+When you add to the CLI: **if the agent would have to read a file to decide something, the CLI should decide it and return the answer.**
 
 ## Data flow
 
@@ -65,51 +65,53 @@ ledger.jsonl ──┤                                              │
                                                   └► dashboard.py ──► HTML
 ```
 
-`ledger.jsonl` is the only source of truth. It is append-only and never edited. `state.json` and `metrics.json` are pure functions of it plus the pack taxonomy, rebuilt on every `record`, and deleting them loses nothing.
+`ledger.jsonl` is the only source of truth. Rows are only ever appended, never edited. `state.json` and `metrics.json` are built from the ledger and the pack taxonomy on every `record`. Deleting them loses nothing.
 
-That makes a scheduling change retroactive: fix the interval function, run `./study rebuild`, and every due date is recomputed from the same history. Mutating state in place would bake a scheduler bug into the data.
+This means a scheduling change applies to all past data. Fix the interval function, run `./study rebuild`, and every due date is recalculated from the same history. If state were edited in place, a scheduler bug would stay in the data for good.
 
 ## Modules
 
-| Module | Responsibility |
+| Module | Does |
 |---|---|
 | `config.py` | paths, levels, profile, date arithmetic |
-| `packs.py` | loading packs, merging the user's bank overlay |
-| `ledger.py` | row validation and append-only I/O |
-| `schedule.py` | the interval algorithm. **The only implementation** |
+| `packs.py` | loads packs and merges in the user's own bank |
+| `ledger.py` | validates rows, reads and appends to the ledger |
+| `schedule.py` | the interval algorithm. **The only implementation of it** |
 | `select.py` | queue order, question drawing, session composition |
-| `metrics.py` | everything `metrics.json` contains |
-| `report.py` | terminal rendering. Reads only |
-| `dashboard.py` | self-contained HTML |
+| `balance.py` | the target question-type mix per level, and the `doctor` check against it |
+| `derive.py` | runs a question's `derivation` and checks the figures in its text |
+| `metrics.py` | everything in `metrics.json` |
+| `report.py` | terminal output. Read-only |
+| `dashboard.py` | the single-file HTML dashboard |
 | `tomlwrite.py` | just enough TOML writing to append a banked question |
-| `sync.py` | backing the data directory up to its own git remote |
+| `sync.py` | backs the data directory up to its own git remote |
 | `cli.py` | argument parsing and command handlers |
 
-Dependencies run one way: `cli` → everything, `select` → `schedule` + `packs` + `ledger`, `schedule` → `ledger` + `packs`, `config` → nothing. No module imports `cli`.
+Imports go one way. `cli` imports everything. `select` imports `schedule`, `balance`, `packs` and `ledger`. `schedule` imports `ledger` and `packs`. `config` imports nothing. No module imports `cli`.
 
-## Rules enforced in code, not in prose
+## Rules the code enforces
 
-- **A measurement must name a facet the pack declares.** `ledger.validate` rejects anything else, so a typo cannot create a phantom facet that is never scheduled.
-- **Derived fields cannot be written.** Passing `strength`, `interval`, `due` or `reps` to `record` is an error, not a silent override.
+- **A score must name a facet the pack declares.** `ledger.validate` rejects anything else, so a typo cannot create a facet that is never scheduled.
+- **Derived fields cannot be written.** Passing `strength`, `interval`, `due`, `reps` or `area` to `record` is an error. It is not silently overridden.
 - **A problem row must name a problem.** `topic` must be `problem:<slug>` with `subtopic: overall`, so a problem score cannot be recorded as a topic score.
-- **A question id must be banked before it is referenced.**
-- **Several measurements of one facet on one date collapse to one rep.** Implemented in `compute_items`, so no session can inflate its own evidence count.
+- **A question must be banked before a row can reference its id.**
+- **Several scores for one facet on one day count as one rep.** `compute_items` does this, so a session cannot inflate its own evidence.
 
 ## Why not a database
 
-The ledger is a few hundred lines of JSONL after a year of daily use: greppable, diffable, portable. A database would add a dependency, a migration story and a file you cannot read, for query performance nobody needs at this scale. The same reasoning puts packs in TOML and the dashboard in a generated file.
+After a year of daily use the ledger is a few hundred lines of JSONL. You can grep it, diff it and copy it anywhere. A database would add a dependency, migrations and a file you cannot read, to speed up queries that are already fast enough. For the same reason, packs are TOML and the dashboard is a generated file.
 
 ## Extending it
 
 **A new pack.** See [authoring-packs.md](authoring-packs.md). No code changes.
 
-**A new session type.** A skill in `.agents/skills/`, plus a session name in `ledger.SESSIONS` if it should be distinguishable in reports.
+**A new session type.** Add a skill in `.agents/skills/`. Add a session name to `ledger.SESSIONS` if you want reports to tell it apart.
 
-**A new technique block.** Add it to `TECHNIQUES` in `select.py` with its cost, then give it a trigger in `_targeted_blocks`. The trigger is the interesting part: a block that fires on preference rather than on a diagnosis is just a menu item.
+**A new technique block.** Add it to `TECHNIQUES` in `select.py` with its cost, then give it a trigger in `_targeted_blocks`. Without a trigger based on your scores, the block is never chosen.
 
-**A different interval function.** `next_interval` in `schedule.py` is pure and tested. Change it and run `./study rebuild`; history is recomputed rather than migrated.
+**A different interval function.** `next_interval` in `schedule.py` is pure and tested. Change it and run `./study rebuild`. History is recalculated, not migrated.
 
-**A different dashboard.** `metrics.json` is a stable public artefact. Read it with anything.
+**A different dashboard.** `metrics.json` is a stable public format. Read it with anything.
 
 ## Tests
 
@@ -117,4 +119,4 @@ The ledger is a few hundred lines of JSONL after a year of daily use: greppable,
 ./study test --verbose
 ```
 
-Coverage is concentrated where correctness is not obvious by inspection: the interval function and its caps, the session-mean collapse, `overall` supersession, level filtering, ledger validation and its rejections, and the end-to-end record-then-rebuild path. The content packs are validated by `./study doctor`, which is the more useful check for them.
+The tests focus on the parts you cannot check by reading: the interval function and its caps, collapsing a day's scores into one rep, an `overall` score being dropped once its topic has sub-topic scores, level filtering, ledger validation and what it rejects, and the full record-then-rebuild path. For the content packs, `./study doctor` is the more useful check.
